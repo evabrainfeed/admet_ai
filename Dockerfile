@@ -30,22 +30,14 @@ WORKDIR /opt/admet_ai
 RUN /opt/conda/bin/python -m pip install .[web] && \
     /opt/conda/bin/python -m pip cache purge
 
-# Expose port 5000 for Cloud Run / Container traffic
-EXPOSE 5000
-
 # Set working directory to the Flask/WSGI app location
 WORKDIR /opt/admet_ai/admet_ai/web
+
+# Expose port 8080 for Cloud Run traffic
+EXPOSE 8080
 
 # Ensure container runs under the non-root MAMBA_USER (Best Practice for Cloud Run)
 USER $MAMBA_USER
 
-# Default command to start Gunicorn using the virtual environment's Python binary
-CMD ["/opt/conda/bin/gunicorn", "--bind", "0.0.0.0:5000", "wsgi:build_app()"]# Change the working directory to "/opt/admet_ai/admet_ai/web"
-WORKDIR /opt/admet_ai/admet_ai/web
-
-# Switch back to the root user to execute the final command
-USER root
-
-# The default command to run when the container starts.
-# It uses Gunicorn to serve the application on 0.0.0.0:5000
-CMD ["gunicorn", "--bind", "0.0.0.0:5000", "wsgi:build_app()"]
+# Default command to start Gunicorn with PyTorch preloading and extended timeout settings on port 8080
+CMD ["/opt/conda/bin/gunicorn", "--bind", "0.0.0.0:8080", "--workers", "1", "--timeout", "300", "--preload", "wsgi:build_app()"]
